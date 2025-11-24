@@ -51,7 +51,7 @@ group.taskSpec = task;
 // Read more about machine types here: https://cloud.google.com/compute/docs/machine-types
 const allocationPolicy = new batch.AllocationPolicy();
 const policy = new batch.AllocationPolicy.InstancePolicy();
-policy.machineType = 'a3-highgpu-1g';
+policy.machineType = 'e2-standard-4';
 const instances = new batch.AllocationPolicy.InstancePolicyOrTemplate();
 instances.policy = policy;
 allocationPolicy.instances = [instances];
