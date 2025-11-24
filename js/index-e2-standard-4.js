@@ -99,6 +99,7 @@ async function callCreateJob() {
         console.error(`Job failed with status: ${jobStatus}`);
         if (job.status.statusEvents && job.status.statusEvents.length > 0) {
           console.error('Error details:', job.status.statusEvents);
+          // We can try to rerun the job or take other actions based on the error details here.
         }
         break;
       }
