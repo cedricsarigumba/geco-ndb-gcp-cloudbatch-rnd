@@ -8,7 +8,7 @@ const projectId = 'sys0000827-36181-sports-dev';
 const region = 'asia-northeast1';
 const jobName = 'geco-ced-job-' + Date.now();
 const machineType = 'a3-highgpu-1g';
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:369a699adff7760a202c88293583a841365f532e7d7ca6b8ed7c5a96391fb24b';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:1da9491de0e652b381e186d407f2d158bd9973ded9fb75f56e5fce1a5d02fe48';
 
 const batchClient = new batchLib.v1.BatchServiceClient();
 
@@ -24,12 +24,6 @@ runnable.environment.variables = {
 };
 task.runnables = [runnable];
 
-// Specify what resources are requested by each task.
-const resources = new batch.ComputeResource();
-resources.cpuMilli = 2000; // in milliseconds per cpu-second. This means the task requires 2 whole CPUs.
-resources.memoryMib = 16;
-task.computeResource = resources;
-
 task.maxRetryCount = 3;
 task.maxRunDuration = {seconds: 3600};
 
@@ -44,6 +38,8 @@ group.taskSpec = task;
 const allocationPolicy = new batch.AllocationPolicy();
 const policy = new batch.AllocationPolicy.InstancePolicy();
 policy.machineType = machineType;
+policy.provisioningModel = 5; // FLEX_START : https://docs.cloud.google.com/php/docs/reference/cloud-batch/latest/V1.AllocationPolicy.ProvisioningModel
+policy.reservation = 'NO_RESERVATION';
 
 // A3 machines have pre-attached GPUs (H100), but we need to install GPU drivers
 const instances = new batch.AllocationPolicy.InstancePolicyOrTemplate();
@@ -54,7 +50,12 @@ allocationPolicy.instances = [instances];
 
 // Specify zone 2 for better A3 instance availability
 const locationPolicy = new batch.AllocationPolicy.LocationPolicy();
-locationPolicy.allowedLocations = [`regions/${region}`]; // Zone 2 is typically -b
+locationPolicy.allowedLocations = [
+  // `zones/asia-east1-c`,           // Changhua County, Taiwan
+  // `zones/asia-northeast1-b`,      // Tokyo, Japan
+  `zones/asia-southeast1-b`,      // Jurong West, Singapore
+  // `zones/asia-southeast1-c`,      // Jurong West, Singapore
+];
 allocationPolicy.location = locationPolicy;
 
 const job = new batch.Job();
@@ -79,7 +80,7 @@ async function callCreateJob() {
 
     // Run request. This is fire and forget.
     const response = await batchClient.createJob(request);
-    console.log('Job created:', response);
+    console.log('Job created:', JSON.stringify(response));
 
     // Poll for job status until it's in progress
     const jobPath = `${parent}/jobs/${jobName}`;
