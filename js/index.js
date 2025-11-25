@@ -17,7 +17,8 @@ const task = new batch.TaskSpec();
 const runnable = new batch.Runnable();
 runnable.container = new batch.Runnable.Container();
 runnable.container.imageUri = imageUri;
-runnable.container.environmentVariables = {
+runnable.environment = new batch.Environment();
+runnable.environment.variables = {
   asset_id: 'asset_12345',
   user_id: 'user_67890',
 };
@@ -34,7 +35,6 @@ task.maxRunDuration = {seconds: 3600};
 
 // Tasks are grouped inside a job using TaskGroups.
 const group = new batch.TaskGroup();
-group.taskCount = 1;
 group.taskSpec = task;
 
 // Policies are used to define on what kind of virtual machines the tasks will run on.
