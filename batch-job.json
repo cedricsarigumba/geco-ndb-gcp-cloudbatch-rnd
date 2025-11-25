@@ -5,7 +5,7 @@
         "runnables": [
           {
             "container": {
-              "imageUri": "asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:2d922cb110e39981c797d7b3049396486da96dacd050107dc7bafa3be911f591"
+              "imageUri": "asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:369a699adff7760a202c88293583a841365f532e7d7ca6b8ed7c5a96391fb24b"
             },
             "environment": {
               "variables": {
