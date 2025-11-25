@@ -7,7 +7,7 @@ const batch = batchLib.protos.google.cloud.batch.v1;
 const projectId = 'sys0000827-36181-sports-dev';
 const region = 'asia-northeast1';
 const jobName = 'geco-ced-job-' + Date.now();
-const machineType = 'e2-standard-4';
+const machineType = 'a3-highgpu-1g';
 const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:369a699adff7760a202c88293583a841365f532e7d7ca6b8ed7c5a96391fb24b';
 
 const batchClient = new batchLib.v1.BatchServiceClient();
@@ -35,17 +35,27 @@ task.maxRunDuration = {seconds: 3600};
 
 // Tasks are grouped inside a job using TaskGroups.
 const group = new batch.TaskGroup();
+group.taskCount = 1; // Required for BATCH_TASK_INDEX to be set
 group.taskSpec = task;
 
 // Policies are used to define on what kind of virtual machines the tasks will run on.
-// In this case, we tell the system to use "e2-standard-4" machine type.
+// In this case, we tell the system to use "a3-highgpu-1g" machine type with GPU support.
 // Read more about machine types here: https://cloud.google.com/compute/docs/machine-types
 const allocationPolicy = new batch.AllocationPolicy();
 const policy = new batch.AllocationPolicy.InstancePolicy();
 policy.machineType = machineType;
+
+// A3 machines have pre-attached GPUs (H100), but we need to install GPU drivers
 const instances = new batch.AllocationPolicy.InstancePolicyOrTemplate();
 instances.policy = policy;
+instances.installGpuDrivers = true; // Enable automatic GPU driver installation
+
 allocationPolicy.instances = [instances];
+
+// Specify zone 2 for better A3 instance availability
+const locationPolicy = new batch.AllocationPolicy.LocationPolicy();
+locationPolicy.allowedLocations = [`regions/${region}`]; // Zone 2 is typically -b
+allocationPolicy.location = locationPolicy;
 
 const job = new batch.Job();
 job.name = jobName;
