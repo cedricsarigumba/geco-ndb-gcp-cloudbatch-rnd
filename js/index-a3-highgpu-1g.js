@@ -38,7 +38,7 @@ group.taskSpec = task;
 const allocationPolicy = new batch.AllocationPolicy();
 const policy = new batch.AllocationPolicy.InstancePolicy();
 policy.machineType = machineType;
-policy.provisioningModel = 5; // FLEX_START : https://docs.cloud.google.com/php/docs/reference/cloud-batch/latest/V1.AllocationPolicy.ProvisioningModel
+policy.provisioningModel = 2; // SPOT=2,FLEX_START=5 : https://docs.cloud.google.com/php/docs/reference/cloud-batch/latest/V1.AllocationPolicy.ProvisioningModel
 policy.reservation = 'NO_RESERVATION';
 
 // A3 machines have pre-attached GPUs (H100), but we need to install GPU drivers
