@@ -47,7 +47,7 @@ const group = new batch.TaskGroup({
 // Read more about machine types here: https://cloud.google.com/compute/docs/machine-types
 const instancePolicy = new batch.AllocationPolicy.InstancePolicy({
   machineType,
-  provisioningModel: 5, // SPOT=2,FLEX_START=5
+  provisioningModel: 2, // SPOT=2,FLEX_START=5
   // Accelerator describes Compute Engine accelerators to be attached to the VM
   accelerators: [
     new batch.AllocationPolicy.Accelerator({

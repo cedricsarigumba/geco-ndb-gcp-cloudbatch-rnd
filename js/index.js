@@ -1,7 +1,7 @@
 // Imports the Batch library
 import batchLib from '@google-cloud/batch';
 const batch = batchLib.protos.google.cloud.batch.v1;
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:1da9491de0e652b381e186d407f2d158bd9973ded9fb75f56e5fce1a5d02fe48';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-ced-running-from-cloud-batch/tennis-analyzer@sha256:dad5acfc0cd755b73f0cfe5fadccb30f0d21cfcc8f2e7139c5348c3dfb7227b6';
 const batchClient = new batchLib.v1.BatchServiceClient();
 const projectId = 'sys0000827-36181-sports-dev';
 // const region = 'asia-northeast1';
@@ -47,7 +47,7 @@ const group = new batch.TaskGroup({
 // Read more about machine types here: https://cloud.google.com/compute/docs/machine-types
 const instancePolicy = new batch.AllocationPolicy.InstancePolicy({
   machineType,
-  provisioningModel: 5, // SPOT=2,FLEX_START=5
+  provisioningModel: 2, // SPOT=2,FLEX_START=5
   // Accelerator describes Compute Engine accelerators to be attached to the VM
   accelerators: [
     new batch.AllocationPolicy.Accelerator({
