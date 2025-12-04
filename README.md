@@ -11,8 +11,9 @@ Batch is a feature from Google Cloud that allows us to run batch processing jobs
 
 Dockerize project and push to Container registry
 ```shell
-docker build -t gcr.io/sys0000827-36181-sports-dev/batch-quickstart .
-docker push gcr.io/sys0000827-36181-sports-dev/batch-quickstart
+docker buildx build --platform linux/amd64 -t batch-quickstart .
+docker tag batch-quickstart:latest asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart:latest
+docker push asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart:latest
 ```
 
 Change project in gcloud

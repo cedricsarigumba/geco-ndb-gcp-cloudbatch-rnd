@@ -1,26 +1,20 @@
+
+
 // Imports the Batch library
 import batchLib from '@google-cloud/batch';
 const batch = batchLib.protos.google.cloud.batch.v1;
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-ced-running-from-cloud-batch/tennis-analyzer@sha256:dad5acfc0cd755b73f0cfe5fadccb30f0d21cfcc8f2e7139c5348c3dfb7227b6';
-const batchClient = new batchLib.v1.BatchServiceClient();
-const projectId = 'sys0000827-36181-sports-dev';
-// const region = 'asia-northeast1';
-const region = 'asia-southeast1';
-const jobName = 'geco-ced-job-' + Date.now();
-// The GPU type. You can view a list of the available GPU types
-// by using the `gcloud compute accelerator-types list` command.
-const gpuType = 'nvidia-h100-80gb';
-const gpuCount = 1;
-// Optional. When set to true, Batch fetches the drivers required for the GPU type
-// that you specify in the policy field from a third-party location,
-// and Batch installs them on your behalf. If you set this field to false (default),
-// you need to install GPU drivers manually to use any GPUs for this job.
-const installGpuDrivers = true;
-// Accelerator-optimized machine types are available to Batch jobs. See the list
-// of available types on: https://cloud.google.com/compute/docs/accelerator-optimized-machines
-const machineType = 'a3-highgpu-1g';
 
-// Define what will be done as part of the job.
+const projectId = 'sys0000827-36181-sports-dev';
+const region = 'asia-northeast1';
+const jobName = 'geco-ced-job-' + Date.now();
+const machineType = 'e2-standard-4';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:c11e3ebbcb6435c8f5021ac09f12c893dabca9c7b70e46f6d66b974399785174';
+const bucketName = 'geco-bucket-sample-running-from-cloud-batch';
+
+const batchClient = new batchLib.v1.BatchServiceClient();
+
+// Set the image url from the Container Registry
+const task = new batch.TaskSpec();
 const runnable = new batch.Runnable();
 runnable.container = new batch.Runnable.Container();
 runnable.container.imageUri = imageUri;
@@ -29,70 +23,101 @@ runnable.environment.variables = {
   asset_id: 'asset_12345',
   user_id: 'user_67890',
 };
+task.runnables = [runnable];
 
-const task = new batch.TaskSpec({
-  runnables: [runnable],
-  maxRetryCount: 2,
-  maxRunDuration: {seconds: 3600},
-});
+const gcsBucket = new batch.GCS();
+gcsBucket.remotePath = bucketName;
+const gcsVolume = new batch.Volume();
+gcsVolume.gcs = gcsBucket;
+gcsVolume.mountPath = '/mnt/disks/share';
+task.volumes = [gcsVolume];
+
+// Specify what resources are requested by each task.
+const resources = new batch.ComputeResource();
+resources.cpuMilli = 2000; // in milliseconds per cpu-second. This means the task requires 2 whole CPUs.
+resources.memoryMib = 16;
+task.computeResource = resources;
+
+task.maxRetryCount = 3;
+task.maxRunDuration = {seconds: 3600};
 
 // Tasks are grouped inside a job using TaskGroups.
-const group = new batch.TaskGroup({
-  taskCount: 1,
-  taskSpec: task,
-});
+const group = new batch.TaskGroup();
+group.taskCount = 1; // Required for BATCH_TASK_INDEX to be set
+group.taskSpec = task;
 
 // Policies are used to define on what kind of virtual machines the tasks will run on.
-// In this case, we tell the system to use "g2-standard-4" machine type.
+// In this case, we tell the system to use "e2-standard-4" machine type.
 // Read more about machine types here: https://cloud.google.com/compute/docs/machine-types
-const instancePolicy = new batch.AllocationPolicy.InstancePolicy({
-  machineType,
-  provisioningModel: 2, // SPOT=2,FLEX_START=5
-  // Accelerator describes Compute Engine accelerators to be attached to the VM
-  accelerators: [
-    new batch.AllocationPolicy.Accelerator({
-      type: gpuType,
-      count: gpuCount,
-      installGpuDrivers,
-    }),
-  ],
-});
+const allocationPolicy = new batch.AllocationPolicy();
+const policy = new batch.AllocationPolicy.InstancePolicy();
+policy.machineType = machineType;
+const instances = new batch.AllocationPolicy.InstancePolicyOrTemplate();
+instances.policy = policy;
+allocationPolicy.instances = [instances];
 
-const allocationPolicy = new batch.AllocationPolicy.InstancePolicyOrTemplate({
-  instances: [{installGpuDrivers, policy: instancePolicy}],
-  location: new batch.AllocationPolicy.LocationPolicy({
-    // Specify allowed zones for the job's VMs
-    allowedLocations: [
-      'zones/asia-southeast1-b',
-      'zones/asia-southeast1-c'
-    ],
-  }),
-});
+const job = new batch.Job();
+job.name = jobName;
+job.taskGroups = [group];
+job.allocationPolicy = allocationPolicy;
+job.labels = {env: 'testing', type: 'container'};
+// We use Cloud Logging as it's an option available out of the box
+job.logsPolicy = new batch.LogsPolicy();
+job.logsPolicy.destination = batch.LogsPolicy.Destination.CLOUD_LOGGING;
 
-const job = new batch.Job({
-  name: jobName,
-  taskGroups: [group],
-  labels: {env: 'testing', type: 'script'},
-  allocationPolicy,
-  // We use Cloud Logging as it's an option available out of the box
-  logsPolicy: new batch.LogsPolicy({
-    destination: batch.LogsPolicy.Destination.CLOUD_LOGGING,
-  }),
-});
 // The job's parent is the project and region in which the job will run
 const parent = `projects/${projectId}/locations/${region}`;
+async function callCreateJob() {
+  try {
+    // Construct request
+    const request = {
+      parent,
+      jobId: jobName,
+      job,
+    };
 
-async function callCreateBatchGPUJob() {
-  // Construct request
-  const request = {
-    parent,
-    jobId: jobName,
-    job,
-  };
+    // Run request. This is fire and forget.
+    const response = await batchClient.createJob(request);
+    console.log('Job created:', response);
 
-  // Run request
-  const [response] = await batchClient.createJob(request);
-  console.log(JSON.stringify(response));
+    // Poll for job status until it's in progress
+    const jobPath = `${parent}/jobs/${jobName}`;
+    let jobStatus = null;
+
+    while (jobStatus !== 'RUNNING') {
+      const [job] = await batchClient.getJob({ name: jobPath });
+      jobStatus = job.status.state;
+      console.log(`Current job status: ${jobStatus}`);
+
+      if (jobStatus === 'RUNNING') {
+        console.log('Job is now in progress!');
+        break;
+      }
+
+      if (jobStatus === 'FAILED') {
+        console.error(`Job failed with status: ${jobStatus}`);
+        if (job.status.statusEvents && job.status.statusEvents.length > 0) {
+          console.error('Error details:', job.status.statusEvents);
+          // We can try to rerun the job or take other actions based on the error details here.
+        }
+        break;
+      }
+
+      if (jobStatus === 'SUCCEEDED') {
+        console.log(`Job completed with status: ${jobStatus}`);
+        break;
+      }
+
+      // Wait 5 seconds before checking again
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  } catch (error) {
+    console.error(error);
+    console.error('Error occurred:', error.message);
+    if (error.details) {
+      console.error('Error details:', error.details);
+    }
+  }
 }
 
-await callCreateBatchGPUJob();
+await callCreateJob();

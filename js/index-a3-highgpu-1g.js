@@ -1,7 +1,7 @@
 // Imports the Batch library
 import batchLib from '@google-cloud/batch';
 const batch = batchLib.protos.google.cloud.batch.v1;
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:1da9491de0e652b381e186d407f2d158bd9973ded9fb75f56e5fce1a5d02fe48';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-ced-running-from-cloud-batch/tennis-analyzer@sha256:dad5acfc0cd755b73f0cfe5fadccb30f0d21cfcc8f2e7139c5348c3dfb7227b6';
 const batchClient = new batchLib.v1.BatchServiceClient();
 const projectId = 'sys0000827-36181-sports-dev';
 // const region = 'asia-northeast1';
@@ -34,6 +34,10 @@ const task = new batch.TaskSpec({
   runnables: [runnable],
   maxRetryCount: 2,
   maxRunDuration: {seconds: 3600},
+  computeResource: new batch.ComputeResource({
+    cpuMilli: 8000,  // 8 vCPUs (in millicores)
+    memoryMib: 32768, // 32GB RAM
+  }),
 });
 
 // Tasks are grouped inside a job using TaskGroups.

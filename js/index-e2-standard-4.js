@@ -8,7 +8,8 @@ const projectId = 'sys0000827-36181-sports-dev';
 const region = 'asia-northeast1';
 const jobName = 'geco-ced-job-' + Date.now();
 const machineType = 'e2-standard-4';
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:369a699adff7760a202c88293583a841365f532e7d7ca6b8ed7c5a96391fb24b';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:c11e3ebbcb6435c8f5021ac09f12c893dabca9c7b70e46f6d66b974399785174';
+const bucketName = 'geco-bucket-sample-running-from-cloud-batch';
 
 const batchClient = new batchLib.v1.BatchServiceClient();
 
@@ -23,6 +24,13 @@ runnable.environment.variables = {
   user_id: 'user_67890',
 };
 task.runnables = [runnable];
+
+const gcsBucket = new batch.GCS();
+gcsBucket.remotePath = bucketName;
+const gcsVolume = new batch.Volume();
+gcsVolume.gcs = gcsBucket;
+gcsVolume.mountPath = '/mnt/disks/share';
+task.volumes = [gcsVolume];
 
 // Specify what resources are requested by each task.
 const resources = new batch.ComputeResource();

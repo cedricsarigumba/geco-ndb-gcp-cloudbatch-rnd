@@ -8,6 +8,13 @@ if __name__ == "__main__":
     # client.setup_logging()
     logging.basicConfig(level=logging.INFO)
 
-    for i in range(10):
-        logging.info("Task %s Secret %s Line %d", os.environ.get("BATCH_TASK_INDEX"), os.environ.get("asset_id"), i)
-        time.sleep(5)
+    # Print contents of the shared file
+    file_path = "/mnt/disks/share/geco-sample-file.txt"
+    try:
+        with open(file_path, "r") as f:
+            contents = f.read()
+            logging.info("Contentxs of %s:\n%s", file_path, contents)
+    except FileNotFoundError:
+        logging.error("File not found: %s", file_path)
+    except Exception as e:
+        logging.error("Error reading file %s: %s", file_path, e)
