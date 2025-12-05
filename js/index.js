@@ -33,7 +33,7 @@ runnable.environment.variables = {
 const task = new batch.TaskSpec({
   runnables: [runnable],
   maxRetryCount: 2,
-  maxRunDuration: {seconds: 3600},
+  maxRunDuration: {seconds: 7200},
   computeResource: new batch.ComputeResource({
     // cpuMilli: 8000,  // 8 vCPUs (in millicores)
     // memoryMib: 32768, // 32GB RAM
@@ -53,6 +53,7 @@ const group = new batch.TaskGroup({
 // Read more about machine types here: https://cloud.google.com/compute/docs/machine-types
 const instancePolicy = new batch.AllocationPolicy.InstancePolicy({
   machineType,
+  reservation: "NO_RESERVATION",
   provisioningModel: 5, // SPOT=2,FLEX_START=5
   // Accelerator describes Compute Engine accelerators to be attached to the VM
   accelerators: [
@@ -64,8 +65,11 @@ const instancePolicy = new batch.AllocationPolicy.InstancePolicy({
   ],
 });
 
-const allocationPolicy = new batch.AllocationPolicy.InstancePolicyOrTemplate({
-  instances: [{installGpuDrivers, policy: instancePolicy}],
+const allocationPolicy = new batch.AllocationPolicy({
+  instances: [{
+    installGpuDrivers,
+    policy: instancePolicy,
+  }],
   location: new batch.AllocationPolicy.LocationPolicy({
     // Specify allowed zones for the job's VMs
     allowedLocations: [

@@ -1,7 +1,7 @@
 // Imports the Batch library
 import batchLib from '@google-cloud/batch';
 const batch = batchLib.protos.google.cloud.batch.v1;
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-ced-running-from-cloud-batch/tennis-analyzer@sha256:dad5acfc0cd755b73f0cfe5fadccb30f0d21cfcc8f2e7139c5348c3dfb7227b6';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:4a40f76b2fa87a082ac11354aa2d8559d9b51ebc8316f626ca7b8e85c8ae6c14';
 const batchClient = new batchLib.v1.BatchServiceClient();
 const projectId = 'sys0000827-36181-sports-dev';
 // const region = 'asia-northeast1';
@@ -33,10 +33,12 @@ runnable.environment.variables = {
 const task = new batch.TaskSpec({
   runnables: [runnable],
   maxRetryCount: 2,
-  maxRunDuration: {seconds: 3600},
+  maxRunDuration: {seconds: 7200},
   computeResource: new batch.ComputeResource({
-    cpuMilli: 8000,  // 8 vCPUs (in millicores)
-    memoryMib: 32768, // 32GB RAM
+    // cpuMilli: 8000,  // 8 vCPUs (in millicores)
+    // memoryMib: 32768, // 32GB RAM
+    cpuMilli: 2000,  // 2 vCPUs (in millicores)
+    memoryMib: 1024, // 1GB RAM
   }),
 });
 
@@ -51,7 +53,8 @@ const group = new batch.TaskGroup({
 // Read more about machine types here: https://cloud.google.com/compute/docs/machine-types
 const instancePolicy = new batch.AllocationPolicy.InstancePolicy({
   machineType,
-  provisioningModel: 2, // SPOT=2,FLEX_START=5
+  reservation: "NO_RESERVATION",
+  provisioningModel: 5, // SPOT=2,FLEX_START=5
   // Accelerator describes Compute Engine accelerators to be attached to the VM
   accelerators: [
     new batch.AllocationPolicy.Accelerator({
@@ -62,8 +65,11 @@ const instancePolicy = new batch.AllocationPolicy.InstancePolicy({
   ],
 });
 
-const allocationPolicy = new batch.AllocationPolicy.InstancePolicyOrTemplate({
-  instances: [{installGpuDrivers, policy: instancePolicy}],
+const allocationPolicy = new batch.AllocationPolicy({
+  instances: [{
+    installGpuDrivers,
+    policy: instancePolicy,
+  }],
   location: new batch.AllocationPolicy.LocationPolicy({
     // Specify allowed zones for the job's VMs
     allowedLocations: [
