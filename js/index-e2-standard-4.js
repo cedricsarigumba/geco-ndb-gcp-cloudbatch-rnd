@@ -8,7 +8,7 @@ const projectId = 'sys0000827-36181-sports-dev';
 const region = 'asia-northeast1';
 const jobName = 'geco-ced-job-' + Date.now();
 const machineType = 'e2-standard-4';
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:c11e3ebbcb6435c8f5021ac09f12c893dabca9c7b70e46f6d66b974399785174';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:4a40f76b2fa87a082ac11354aa2d8559d9b51ebc8316f626ca7b8e85c8ae6c14';
 const bucketName = 'geco-bucket-sample-running-from-cloud-batch';
 
 const batchClient = new batchLib.v1.BatchServiceClient();
@@ -43,7 +43,9 @@ task.maxRunDuration = {seconds: 3600};
 
 // Tasks are grouped inside a job using TaskGroups.
 const group = new batch.TaskGroup();
-group.taskCount = 1; // Required for BATCH_TASK_INDEX to be set
+group.schedulingPolicy = batch.TaskGroup.SchedulingPolicy.IN_ORDER;
+group.taskCount = 10; // Required for BATCH_TASK_INDEX to be set
+group.parallelism = 1;
 group.taskSpec = task;
 
 // Policies are used to define on what kind of virtual machines the tasks will run on.
