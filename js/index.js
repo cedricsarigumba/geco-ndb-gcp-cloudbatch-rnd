@@ -1,7 +1,7 @@
 // Imports the Batch library
 import batchLib from '@google-cloud/batch';
 const batch = batchLib.protos.google.cloud.batch.v1;
-const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-container-tests/batch-quickstart@sha256:4a40f76b2fa87a082ac11354aa2d8559d9b51ebc8316f626ca7b8e85c8ae6c14';
+const imageUri = 'asia-northeast1-docker.pkg.dev/sys0000827-36181-sports-dev/geco-ced-running-from-cloud-batch/tennis-analyzer@sha256:853a4bd7dbe881a88ca902aacf3c501fef15436b69f63bf325ff7f316aab8f12';
 const batchClient = new batchLib.v1.BatchServiceClient();
 const projectId = 'sys0000827-36181-sports-dev';
 // const region = 'asia-northeast1';
@@ -19,6 +19,7 @@ const installGpuDrivers = true;
 // Accelerator-optimized machine types are available to Batch jobs. See the list
 // of available types on: https://cloud.google.com/compute/docs/accelerator-optimized-machines
 const machineType = 'a3-highgpu-1g';
+const bucketName = 'geco-bucket-sample-running-from-cloud-batch';
 
 // Define what will be done as part of the job.
 const runnable = new batch.Runnable();
@@ -30,6 +31,13 @@ runnable.environment.variables = {
   user_id: 'user_67890',
 };
 
+const gcsBucket = new batch.GCS();
+gcsBucket.remotePath = bucketName;
+const gcsVolume = new batch.Volume();
+gcsVolume.gcs = gcsBucket;
+gcsVolume.mountPath = '/mnt/disks/share';
+
+
 const task = new batch.TaskSpec({
   runnables: [runnable],
   maxRetryCount: 2,
@@ -37,10 +45,11 @@ const task = new batch.TaskSpec({
   computeResource: new batch.ComputeResource({
     // cpuMilli: 8000,  // 8 vCPUs (in millicores)
     // memoryMib: 32768, // 32GB RAM
-    cpuMilli: 2000,  // 2 vCPUs (in millicores)
-    memoryMib: 1024, // 1GB RAM
+    cpuMilli: 8000,  // 8 vCPUs (in millicores)
+    memoryMib: 4096, // 1GB RAM
   }),
 });
+task.volumes = [gcsVolume];
 
 // Tasks are grouped inside a job using TaskGroups.
 const group = new batch.TaskGroup({
